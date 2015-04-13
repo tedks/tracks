@@ -915,7 +915,7 @@ form {
     background: #ddd;
     width: 270px;
     padding: 5px 10px;
-    background-color: #000;
+    background-color: #001;
     color: #eee;
 }
 
@@ -1086,7 +1086,7 @@ div.message {
 }
 
 #errorExplanation {
-    border: 2px solid #ff0000;
+    border: 2px solid #ff0010;
     padding: 7px;
     padding-bottom: 12px;
     margin: 10px auto 20px auto;
@@ -1098,7 +1098,7 @@ div.message {
         padding: 5px 5px 5px 15px;
         font-size: 12px;
         margin: -7px;
-        background-color: #c00;
+        background-color: #c01;
         color: #fff;
     }
 
@@ -1182,7 +1182,7 @@ input.open_id {
     background: image-url('open-id-login-bg.gif') no-repeat;
     background-color: #fff;
     background-position: 0 50%;
-    color: #000;
+    color: #001;
     padding-left: 18px;
     width:182px;
 }
@@ -1232,7 +1232,7 @@ table.users_table {
     border-spacing: 0px;
 }
 
-.users_table th {color: #fff; background-color: #000;}
+.users_table th {color: #fff; background-color: #001;}
 .users_table td {border: none;}
 
 table.export_table {
@@ -1241,7 +1241,7 @@ table.export_table {
     border-spacing: 0px;
 }
 
-.export_table th {color: #fff; background-color: #000;}
+.export_table th {color: #fff; background-color: #001;}
 .export_table td {border: 1px; padding: 5px 0px 5px 5px;}
 
 /* Submit button styling from ParticleTree

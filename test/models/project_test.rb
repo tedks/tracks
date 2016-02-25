@@ -89,7 +89,12 @@ class ProjectTest < ActiveSupport::TestCase
 
   def test_review_completedprojects
     @timemachine.complete!
-    assert !@timemachine.needs_review?(users(:admin_user))
+    refute @timemachine.needs_review?(users(:admin_user))
+  end
+
+  def test_new_project_is_reviewed
+    project = users(:admin_user).projects.create!(:name => "test1")
+    refute project.needs_review?(users(:admin_user))
   end
 
   def test_complete_project
@@ -98,7 +103,7 @@ class ProjectTest < ActiveSupport::TestCase
     assert_equal :completed, @timemachine.aasm.current_state
     assert @timemachine.completed?
     assert_not_nil @timemachine.completed_at, "completed_at not expected to be nil"
-    assert_in_delta Time.now, @timemachine.completed_at, 1
+    assert_in_delta Time.zone.now, @timemachine.completed_at, 1
   end
 
   def test_delete_project_deletes_todos_within_it
@@ -198,7 +203,6 @@ class ProjectTest < ActiveSupport::TestCase
 
   def test_project_blocked
     p = users(:admin_user).projects.first
-    todo_in_other_project = users(:admin_user).projects.last.todos.first
 
     assert !p.blocked?, "first project should not be blocked"
 
@@ -208,6 +212,9 @@ class ProjectTest < ActiveSupport::TestCase
     p.activate!
     p.todos.each{|t| t.show_from = 2.weeks.from_now; t.save! }
     assert p.blocked?, "projects with deferred todos should be blocked"
+
+    p.todos.first.complete!
+    assert p.blocked?, "projects with deferred todo should be blocked even if a completed todo exists"
   end
 
   def test_project_stalled
@@ -220,7 +227,7 @@ class ProjectTest < ActiveSupport::TestCase
     assert !p.stalled?, "completed projects are not stalled"
 
     p.activate!
-    p.todos.each{|t| t.complete!}
+    p.todos.each(&:complete!)
     assert p.todos.reload.active.empty?, "project should not have active todos"
     assert p.todos.reload.deferred_or_blocked.empty?, "there should not be deferred or blocked todos"
     assert p.reload.stalled?, "project should be stalled"
@@ -252,5 +259,4 @@ class ProjectTest < ActiveSupport::TestCase
     p.reload
     assert_equal 4, p.running_time
   end
-
 end

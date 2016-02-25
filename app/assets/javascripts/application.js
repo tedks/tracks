@@ -12,6 +12,14 @@
 //
 //= require jquery
 //= require jquery_ujs
+//= require bootstrap-sprockets
+
+//= require jquery-ui/autocomplete
+//= require jquery-ui/datepicker
+//= require jquery-ui/dialog
+//= require jquery-ui/droppable
+//= require jquery-ui/effect-highlight
+//= require jquery-ui/sortable
 
 // Stuff in app/assets
 //= require tracks
@@ -19,7 +27,6 @@
 //= require disable_fx_in_test
 
 // Stuff in vendor/assets
-//= require jquery-ui-1.10.0.custom.min
 //= require jquery.ui.touch-punch.min
 //= require jquery.blockUI
 //= require jquery.cookie
@@ -27,7 +34,6 @@
 //= require jquery.jeditable.mini
 //= require jquery.simulate.drag-sortable
 //= require jquery.truncator
-//= require niftycube
 //= require superfish
 //= require supersubs
 //= require swf_fu

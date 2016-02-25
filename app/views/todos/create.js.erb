@@ -28,7 +28,7 @@
     $('#todo-form-new-action').clearForm();
     $('#todo-form-new-action').clearDeps();
     TracksForm.set_context_name('<%=escape_javascript @initial_context_name%>');
-    TracksForm.set_project_name('<%=escape_javascript @initial_project_name%>');
+    TracksForm.set_project_name_and_default_project_name('<%=escape_javascript @initial_project_name%>');
     TracksForm.set_tag_list_and_default_tag_list('<%=escape_javascript @initial_tags%>');
     $('#todo-form-new-action input:text:first').focus();
     $('#new_todo_starred_link .todo_star').removeClass('starred');
@@ -49,7 +49,10 @@
 
   function add_todo_to_existing_container(next_steps) {
     $('#<%= empty_container_msg_div_id %>').hide();
-    $('#<%= item_container_id(@todo) %>_items').append(html_for_new_todo());
+    var container = $('#<%= item_container_id(@todo) %>_items');
+    container.append(html_for_new_todo());
+    TracksPages.sort_container(container);
+
     $('#<%= item_container_id(@todo) %>').slideDown(500, function() {
       $('#<%= dom_id(@todo) %>').effect('highlight', {}, 2000 );
       next_steps.go();

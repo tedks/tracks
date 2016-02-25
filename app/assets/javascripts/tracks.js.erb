@@ -13,9 +13,6 @@ var TracksForm = {
         }
         toggleLink.parent().toggleClass('hide_form');
     },
-    set_project_name: function (name) {
-        $('input#todo_project_name').val(name);
-    },
     set_project_name_for_multi_add: function (name) {
         $('#multi_todo_project_name').val(name);
     },
@@ -30,9 +27,8 @@ var TracksForm = {
         $('input[name=default_context_name]').val(name);
     },
     set_project_name_and_default_project_name: function (name) {
-        TracksForm.set_project_name('');
+        $('input#todo_project_name').val(name);
         $('#default_project_name_id').val(name);
-        $('#project_name').html(name);
     },
     set_tag_list_and_default_tag_list: function (name) {
         $('input#tag_list').val(name);
@@ -205,6 +201,7 @@ var TodoItems = {
         params.data += "&term="+term;
         params.dataType = "json";
         params.async = false;
+        params.cache = false; // fix for Google Chrome around 48.0.2564.82, see issue #1983
         params.success = function(result){
             allContexts = result;
         };
@@ -301,7 +298,6 @@ var TodoItems = {
         /* Drag & Drop for successor/predecessor */
         var dragged_todo = ui.draggable[0].id.split('_')[2];
         var dropped_todo = this.id.split('_')[2];
-        ui.draggable.remove();
         $('.drop_target').hide(); // IE8 doesn't call stop() in this situation
 
         ajax_options = default_ajax_options_for_scripts('POST', relative_to_root('todos/add_predecessor'), $(this));
@@ -324,7 +320,7 @@ var TodoItems = {
     setup_drag_and_drop: function() {
         $('.item-show').draggable({
             handle: '.grip',
-            revert: 'invalid',
+            revert: true,
             start: TodoItems.drag_todo,
             stop: function() {
                 $('.drop_target').hide();
@@ -472,10 +468,6 @@ var PreferencesPage = {
       });
     },
     setup_behavior: function() {
-      $( "#tabs" ).tabs();
-
-      $( "button#prefs_submit" ).button();
-
       $('input[name="user[auth_type]"]').change(function() {
         var value = $('input[name="user[auth_type]"]:checked').val();
         $('#open_id')[0].style.display = value ==='open_id' ? 'block' : 'none';
@@ -659,7 +651,7 @@ var ContextListPage = {
         $.post(relative_to_root('contexts/'+context_id), {
             'context[name]': value,
             '_method': 'put'
-        }, highlight);
+        }, highlight, 'script');
         return value;
     },
     setup_behavior: function() {
@@ -838,7 +830,8 @@ var RecurringTodosPage = {
           RecurringTodosPage.hide_all_recurring();
           RecurringTodosPage.reset_radio();
           $('#recurring_daily').show();
-        }
+        },
+        appendTo: "#content"
       });
 
       /* change recurring period radio input on new form */
@@ -1144,8 +1137,6 @@ $(document).ready(function() {
         });
     }
 
-    TracksPages.setup_nifty_corners();
-
     TodoItemsContainer.setup_container_toggles();
 
     /* enable page specific behavior */
@@ -1158,4 +1149,3 @@ $(document).ready(function() {
     /* Gets called from all AJAX callbacks, too */
     enable_rich_interaction();
 });
-

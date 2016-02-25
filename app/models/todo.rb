@@ -3,7 +3,6 @@ class Todo < ActiveRecord::Base
   MAX_DESCRIPTION_LENGTH = 300
   MAX_NOTES_LENGTH = 60000
 
-  before_save :render_note
   after_save :save_predecessors
 
   # associations
@@ -24,6 +23,7 @@ class Todo < ActiveRecord::Base
     :source => :predecessor
   has_many :pending_successors, -> {where('todos.state = ?', 'pending')}, :through => :predecessor_dependencies,
     :source => :successor
+  has_many :attachments, dependent: :destroy
 
   # scopes for states of this todo
   scope :active, -> { where state: 'active' }
@@ -187,7 +187,7 @@ class Todo < ActiveRecord::Base
 
   def touch_predecessors
     self.touch
-    predecessors.each { |p| p.touch_predecessors }
+    predecessors.each(&:touch_predecessors)
   end
 
   def removed_predecessors
@@ -377,14 +377,6 @@ class Todo < ActiveRecord::Base
     end
   end
 
-  def render_note
-    unless self.notes.nil?
-      self.rendered_notes = Tracks::Utils.render_text(self.notes)
-    else
-      self.rendered_notes = nil
-    end
-  end
-
   def self.import(filename, params, user)
     default_context = user.contexts.order('id').first
 
@@ -406,6 +398,18 @@ class Todo < ActiveRecord::Base
       end
     end
     count
+  end
+
+  def destroy
+    # activate successors if they only depend on this action
+    self.pending_successors.each do |successor|
+      successor.uncompleted_predecessors.delete(self)
+      if successor.uncompleted_predecessors.empty?
+        successor.activate!
+      end
+    end
+
+    super
   end
 
 end

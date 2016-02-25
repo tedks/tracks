@@ -28,7 +28,6 @@ Rails.application.routes.draw do
   get 'integrations/rest_api' => "integrations#rest_api", :as => 'rest_api_docs'
   post 'integrations/cloudmailin' => 'integrations#cloudmailin'
   get 'integrations/search_plugin' => "integrations#search_plugin", :as => 'search_plugin'
-  get 'integrations/google_gadget.xml' => 'integrations#google_gadget', :as => 'google_gadget'
 
   get 'preferences' => "preferences#index"
   get 'preferences/render_date_format' => "preferences#render_date_format"
@@ -101,11 +100,12 @@ Rails.application.routes.draw do
     end
   end
 
-  # match /todos/tag and put everything in :name, including extensions like .m and .txt. 
+  # match /todos/tag and put everything in :name, including extensions like .m and .txt.
   # This means the controller action needs to parse the extension and set format/content type
   # Needed for /todos/tag/first.last.m to work
   get 'todos/tag/:name' => 'todos#tag', :as => :tag, :format => false, :name => /.*/
   
+  get 'attachments/:id/:filename' => "todos#attachment"
   get 'tags.autocomplete' => "todos#tags", :format => 'autocomplete'
   get 'todos/done/tag/:name' => "todos#done_tag", :as => :done_tag
   get 'todos/all_done/tag/:name' => "todos#all_done_tag", :as => :all_done_tag

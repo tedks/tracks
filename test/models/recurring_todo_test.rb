@@ -11,18 +11,18 @@ class RecurringTodoTest < ActiveSupport::TestCase
     @every_month = @monthly_every_last_friday
     @yearly = recurring_todos(:birthday_reinier)
 
-    @today = Time.now.utc
+    @today = Time.zone.now
     @tomorrow = @today + 1.day
     @in_three_days = @today + 3.days
     @in_four_days = @in_three_days + 1.day    # need a day after start_from
 
-    @friday = Time.zone.local(2008,6,6)
-    @saturday = Time.zone.local(2008,6,7)
-    @sunday = Time.zone.local(2008,6,8)  # june 8, 2008 was a sunday
-    @monday = Time.zone.local(2008,6,9)
-    @tuesday = Time.zone.local(2008,6,10)
-    @wednesday = Time.zone.local(2008,6,11)
-    @thursday = Time.zone.local(2008,6,12)
+    @friday = Time.zone.local(2008,6,6,1,2,3)
+    @saturday = Time.zone.local(2008,6,7,1,2,3)
+    @sunday = Time.zone.local(2008,6,8,1,2,3)  # june 8, 2008 was a sunday
+    @monday = Time.zone.local(2008,6,9,1,2,3)
+    @tuesday = Time.zone.local(2008,6,10,1,2,3)
+    @wednesday = Time.zone.local(2008,6,11,1,2,3)
+    @thursday = Time.zone.local(2008,6,12,1,2,3)
   end
 
   def test_show_from_date
@@ -35,7 +35,7 @@ class RecurringTodoTest < ActiveSupport::TestCase
 
     # check show from get the next day
     assert_equal_dmy @today, @every_day.get_show_from_date(@today-1.days)
-    assert_equal @today+1.day, @every_day.get_show_from_date(@today)
+    assert_equal (@today+1.day).at_midnight, @every_day.get_show_from_date(@today)
 
     @every_day.target='due_date'
     # when target on due_date, show_from is relative to due date unless show_always is true
@@ -58,24 +58,37 @@ class RecurringTodoTest < ActiveSupport::TestCase
     # weekly/monthly/yearly
   end
 
+  def test_show_from_at_midnight
+    test_cases = [@every_day, @every_workday, @weekly_every_day, @every_week, @monthly_every_last_friday, @yearly]
+    test_cases.each do |test_case|
+      test_case.target='show_from_date'
+      show_from_date = test_case.get_show_from_date(@today)
+      assert_equal show_from_date.at_midnight, show_from_date unless show_from_date.nil?
+
+      test_case.target='due_date'
+      show_from_date = test_case.get_show_from_date(@today)
+      assert_equal show_from_date.at_midnight, show_from_date unless show_from_date.nil?
+    end
+  end
+
   def test_next_todo_without_previous_todo
     # test handling of nil as previous
     #
     # start_from is way_back
     due_date1 = @yearly.get_due_date(nil)
-    due_date2 = @yearly.get_due_date(Time.now.utc + 1.day)
+    due_date2 = @yearly.get_due_date(Time.zone.now + 1.day)
     assert_equal due_date1, due_date2
 
     # start_from is in the future
-    @yearly.start_from = Time.now.utc + 1.week
+    @yearly.start_from = Time.zone.now + 1.week
     due_date1 = @yearly.get_due_date(nil)
-    due_date2 = @yearly.get_due_date(Time.now.utc + 1.day)
+    due_date2 = @yearly.get_due_date(Time.zone.now + 1.day)
     assert_equal due_date1, due_date2
 
     # start_from is nil
     @yearly.start_from = nil
     due_date1 = @yearly.get_due_date(nil)
-    due_date2 = @yearly.get_due_date(Time.now.utc + 1.day)
+    due_date2 = @yearly.get_due_date(Time.zone.now + 1.day)
     assert_equal due_date1, due_date2
   end
 
@@ -92,14 +105,14 @@ class RecurringTodoTest < ActiveSupport::TestCase
     # every_day should return start_day if it is in the future
     @every_day.start_from = @in_three_days
     due_date = @every_day.get_due_date(nil)
-    assert_equal @in_three_days.to_s(:db), due_date.to_s(:db)
+    assert_equal @in_three_days.at_midnight.to_s(:db), due_date.to_s(:db)
     due_date = @every_day.get_due_date(@tomorrow)
-    assert_equal @in_three_days, due_date
+    assert_equal @in_three_days.at_midnight, due_date
 
     # if we give a date in the future for the previous todo, the next to do
     # should be based on that future date.
     due_date = @every_day.get_due_date(@in_four_days)
-    assert_equal @in_four_days+1.day, due_date
+    assert_equal (@in_four_days+1.day).at_midnight, due_date
 
     @weekly_every_day.start_from = Time.zone.local(2020,1,1)
     assert_equal Time.zone.local(2020,1,1), @weekly_every_day.get_due_date(nil)
@@ -117,7 +130,7 @@ class RecurringTodoTest < ActiveSupport::TestCase
     assert_equal Time.zone.local(2021,6,8), @yearly.get_due_date(Time.zone.local(2019,6,1)) # also next year
     assert_equal Time.zone.local(2021,6,8), @yearly.get_due_date(Time.zone.local(2020,6,15)) # also next year
 
-    this_year = Time.now.utc.year
+    this_year = Time.zone.now.utc.year
     @yearly.start_from = Time.zone.local(this_year+1,6,12)
     due_date = @yearly.get_due_date(nil)
     assert_equal due_date.year, this_year+2

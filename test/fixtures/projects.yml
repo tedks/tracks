@@ -1,7 +1,16 @@
 # Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+# Please note that dates in yml are not converted to utc timezone like
+# rails does automatically in models or controllers! Convert to utc manually!
 <%
-def today 
-  Time.zone.now.beginning_of_day.to_s(:db) 
+def today
+  Time.zone.now.utc.beginning_of_day.to_s(:db)
+end
+def yesterday
+  1.day.ago.utc.beginning_of_day.to_s(:db)
+end
+def last_week
+  1.week.ago.utc.beginning_of_day.to_s(:db)
 end
 %>
 
@@ -25,6 +34,7 @@ moremoney:
   user_id: 1
   created_at: <%= today %>
   updated_at: <%= today %>
+  last_reviewed: <%= yesterday %>
 
 gardenclean:
   id: 3
@@ -35,6 +45,7 @@ gardenclean:
   user_id: 1
   created_at: <%= today %>
   updated_at: <%= today %>
+  last_reviewed: <%= last_week %>
 
 attendrailsconf:
   id: 4

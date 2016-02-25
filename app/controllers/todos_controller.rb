@@ -40,18 +40,21 @@ class TodosController < ApplicationController
         cookies[:mobile_url]= { :value => request.fullpath, :secure => SITE_CONFIG['secure_cookies']}
         determine_down_count
 
-        render :action => 'index'
+        render :action => 'index'.freeze
       end
       format.text  do
         # somehow passing Mime::TEXT using content_type to render does not work
-        headers['Content-Type']=Mime::TEXT.to_s
+        headers['Content-Type'.freeze]=Mime::TEXT.to_s
         render :content_type => Mime::TEXT
       end
       format.xml do
         @xml_todos = params[:limit_to_active_todos] ? @not_done_todos : @todos
         render :xml => @xml_todos.to_xml( *todo_xml_params )
       end
-      format.any(:rss, :atom) { @feed_title, @feed_description = 'Tracks Actions', "Actions for #{current_user.display_name}" }
+      format.any(:rss, :atom) do
+        @feed_title = 'Tracks Actions'.freeze
+        @feed_description = "Actions for #{current_user.display_name}"
+      end
       format.ics
     end
   end
@@ -85,7 +88,7 @@ class TodosController < ApplicationController
       create_multiple
     else
       p = Todos::TodoCreateParamsHelper.new(params, current_user)
-      p.parse_dates() unless mobile?
+      p.parse_dates unless mobile?
       tag_list = p.tag_list
 
       @todo = current_user.todos.build
@@ -156,7 +159,10 @@ class TodosController < ApplicationController
     p = Todos::TodoCreateParamsHelper.new(params, current_user)
     tag_list = p.tag_list
 
-    @not_done_todos, @build_todos, @todos, errors = [], [], [], []
+    @not_done_todos = []
+    @build_todos = []
+    @todos = []
+    errors = []
     @predecessor = nil
     validates = true
 
@@ -423,7 +429,18 @@ class TodosController < ApplicationController
     update_dependencies
     update_attributes_of_todo
 
-    @saved = @todo.save
+    begin
+      @saved = @todo.save!
+    rescue ActiveRecord::RecordInvalid => exception
+      record = exception.record
+      if record.is_a?(Dependency)
+        record.errors.each { |key,value| @todo.errors[key] << value }
+      end
+      @saved = false
+    end
+
+
+    provide_project_or_context_for_view
 
     # this is set after save and cleared after reload, so save it here
     @removed_predecessors = @todo.removed_predecessors
@@ -457,6 +474,15 @@ class TodosController < ApplicationController
     end
   end
 
+  def provide_project_or_context_for_view
+    # see application_helper:source_view_key, used in shown partials
+    if source_view_is :project
+      @project = @todo.project
+    elsif source_view_is :context
+      @context = @todo.context
+    end
+  end
+
   def destroy
     @source_view = params['_source_view'] || 'todo'
     @todo = current_user.todos.find(params['id'])
@@ -474,13 +500,10 @@ class TodosController < ApplicationController
       @uncompleted_predecessors << predecessor
     end
 
-    # activate successors if they only depend on this todo
     activated_successor_count = 0
     @pending_to_activate = []
     @todo.pending_successors.each do |successor|
-      successor.uncompleted_predecessors.delete(@todo)
-      if successor.uncompleted_predecessors.empty?
-        successor.activate!
+      if successor.uncompleted_predecessors.size == 1
         @pending_to_activate << successor
         activated_successor_count += 1
       end
@@ -635,9 +658,6 @@ class TodosController < ApplicationController
 
     # Set defaults for new_action
     @initial_tags = @tag_name
-    unless @not_done_todos.empty?
-      @context = current_user.contexts.find(@not_done_todos.first.context_id)
-    end
 
     # Set count badge to number of items with this tag
     @not_done_todos.empty? ? @count = 0 : @count = @not_done_todos.size
@@ -795,6 +815,20 @@ class TodosController < ApplicationController
     end
   end
 
+  def attachment
+    id = params[:id]
+    filename = params[:filename]
+    attachment = current_user.attachments.find(id)
+
+    if attachment
+      send_file(attachment.file.path,
+        disposition: 'attachment',
+        type: 'message/rfc822')
+    else
+      head :not_found
+    end
+  end
+
   private
 
   def set_group_view_by
@@ -856,13 +890,15 @@ class TodosController < ApplicationController
     elsif params[:format].nil?
       # if no format is given, default to html
       # note that if url has ?format=m, we should not overwrite it here
-      request.format, params[:format] = :html, :html
+      request.format = :html
+      params[:format] = :html
     end
   end
 
   def set_format_for_tag_view(format)
     # tag name ends with .m, set format to :m en remove .m from name
-    request.format, params[:format] = format, format
+    request.format = format
+    params[:format] = format
     params[:name] = params[:name].chomp(".#{format.to_s}")
 end
 
@@ -1051,10 +1087,10 @@ end
       if recurring_todo.todos.active.count == 0
 
         # check for next todo either from the due date or the show_from date
-        date_to_check = todo.due.nil? ? todo.show_from : todo.due
+        date_to_check = todo.due || todo.show_from
 
         # if both due and show_from are nil, check for a next todo from now
-        date_to_check = Time.zone.now if date_to_check.nil?
+        date_to_check ||= Time.zone.now
 
         if recurring_todo.active? && recurring_todo.continues_recurring?(date_to_check)
 
@@ -1067,7 +1103,7 @@ end
           # for tomorrow.
           date = date_to_check.at_midnight >= Time.zone.now.at_midnight ? date_to_check : Time.zone.now-1.day
 
-          new_recurring_todo = TodoFromRecurringTodo.new(current_user, recurring_todo).create(date.at_midnight)
+          new_recurring_todo = TodoFromRecurringTodo.new(current_user, recurring_todo).create(date)
         end
       end
     end
@@ -1133,9 +1169,9 @@ end
   end
 
   def update_project
-    @project_changed = false;
+    @project_changed = false
     if params['todo']['project_id'].blank? && !params['project_name'].nil?
-      if params['project_name'] == 'None'
+      if params['project_name'].blank?
         project = Project.null_object
       else
         project = current_user.projects.where(:name => params['project_name'].strip).first

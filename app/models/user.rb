@@ -34,7 +34,7 @@ class User < ActiveRecord::Base
                 }
               end
               def projects_in_state_by_position(state)
-                self.sort{ |a,b| a.position <=> b.position }.select{ |p| p.state == state }
+                self.select{ |p| p.state == state }.sort_by{ |p| p.position }
               end
               def next_from(project)
                 self.offset_from(project, 1)
@@ -96,10 +96,11 @@ class User < ActiveRecord::Base
 
   has_many :notes, -> { order "created_at DESC" }, dependent: :delete_all
   has_one :preference, dependent: :destroy
+  has_many :attachments, through: :todos
 
   validates_presence_of :login
   validates_presence_of :password, if: :password_required?
-  validates_length_of :password, within: 5..40, if: :password_required?
+  validates_length_of :password, within: 5..72, if: :password_required?
   validates_presence_of :password_confirmation, if: :password_required?
   validates_confirmation_of :password
   validates_length_of :login, within: 3..80

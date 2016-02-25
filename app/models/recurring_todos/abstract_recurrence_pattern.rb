@@ -127,7 +127,7 @@ module RecurringTodos
     def get_due_date(previous)
       case target
       when 'due_date'
-        get_next_date(previous)
+        get_next_date(previous).at_midnight
       when 'show_from_date'
         nil
       end
@@ -141,7 +141,7 @@ module RecurringTodos
         get_due_date(previous) - show_from_delta.days
       when 'show_from_date'
         # Leave due date empty
-        get_next_date(previous)
+        get_next_date(previous).at_midnight
       end
     end
 
@@ -151,7 +151,7 @@ module RecurringTodos
     end
 
     def get_next_date(previous)
-      raise "Should not call AbstractRecurrencePattern.get_next_date directly. Overwrite in subclass"
+      raise "Should not call AbstractRecurrencePattern.get_next_date directly. Override in subclass"
     end
 
     def continues_recurring?(previous)
@@ -174,13 +174,13 @@ module RecurringTodos
     # same day as the previous
     def determine_start(previous, offset=0.day)
       start = self.start_from || NullTime.new
-      now = Time.zone.now
       if previous
         # check if the start_from date is later than previous. If so, use
         # start_from as start to search for next date
         start > previous ? start : previous + offset
       else
         # skip to present
+        now = Time.zone.now
         start > now ? start : now
       end
     end
@@ -188,8 +188,8 @@ module RecurringTodos
     # Example: get 3rd (x) wednesday  (weekday) of december (month) 2014 (year)
     # 5th means last, so it will return the 4th if there is no 5th
     def get_xth_day_of_month(x, weekday, month, year)
-      raise "Weekday should be between 0 and 6 with 0=sunday. You supplied #{weekday}" unless (0..6).include?(weekday)
-      raise "x should be 1-4 for first-fourth or 5 for last. You supplied #{x}" unless (0..5).include?(x)
+      raise "Weekday should be between 0 and 6 with 0=sunday. You supplied #{weekday}" unless (0..6).cover?(weekday)
+      raise "x should be 1-4 for first-fourth or 5 for last. You supplied #{x}" unless (0..5).cover?(x)
 
       if x == 5
         return find_last_day_x_of_month(weekday, month, year)
@@ -199,32 +199,24 @@ module RecurringTodos
     end
 
     def find_last_day_x_of_month(weekday, month, year)
-      # count backwards. use UTC to avoid strange timezone oddities
-      # where last_day -= 1.day seems to shift tz+0100 to tz+0000
-      last_day = Time.utc(year, month, Time.days_in_month(month))
+      last_day = Time.zone.local(year, month, Time.days_in_month(month))
       while last_day.wday != weekday
         last_day -= 1.day
       end
-      # convert back to local timezone
-      Time.zone.local(last_day.year, last_day.month, last_day.day)
+      last_day
     end
 
     def find_xth_day_of_month(x, weekday, month, year)
-      # 1-4th -> count upwards last -> count backwards. use UTC to avoid strange
-      # timezone oddities where last_day -= 1.day seems to shift tz+0100 to
-      # tz+0000
-      start = Time.utc(year,month,1)
+      start = Time.zone.local(year,month,1)
       n = x
       while n > 0
         while start.wday() != weekday
-          start+= 1.day
+          start += 1.day
         end
         n -= 1
-        start+= 1.day unless n==0
+        start += 1.day unless n==0
       end
-      # convert back to local timezone
-      Time.zone.local(start.year, start.month, start.day)
+      start
     end
-
   end
 end

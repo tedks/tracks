@@ -75,9 +75,7 @@ end
 Then /^I should see an active todo "([^"]*)"$/ do |todo_description|
   todo = @current_user.todos.where(:description => todo_description).first
   expect(todo).to_not be_nil
-
-  xpath = "//div[@id='line_todo_#{todo.id}']/img[@class='grip']"
-  expect(page).to have_xpath(xpath, :visible=>true)
+  expect(page).to have_css("div#line_todo_#{todo.id} img.grip", :visible=>true)
 end
 
 Then /^the number of actions should be (\d+)$/ do |count|
@@ -116,7 +114,12 @@ end
 
 Then /^the project field of the new todo form should contain "([^"]*)"$/ do |project_name|
   xpath= "//form[@id='todo-form-new-action']/input[@id='todo_project_name']"
-  expect(project_name).to eq(page.find(:xpath, xpath).value)
+  expect(page.find(:xpath, xpath).value).to eq(project_name)
+end
+
+Then /^the context field of the new todo form should contain "([^"]*)"$/ do |context_name|
+  xpath= "//form[@id='todo-form-new-action']/input[@id='todo_context_name']"
+  expect(page.find(:xpath, xpath).value).to eq(context_name)
 end
 
 Then /^the default context of the new todo form should be "([^"]*)"$/ do |context_name|
@@ -156,4 +159,9 @@ end
 Then /^I should (see|not see) the empty tickler message$/ do |see|
   elem = find("div#no_todos_in_view")
   expect(elem).send(see=="see" ? :to : :to_not, be_visible)
+end
+
+Then /^I should see the todo "([^"]*)" with project name "([^"]*)"$/ do |todo_description, project_name|
+  todo = @current_user.todos.where(:description => todo_description).first
+  expect(todo.project.name).to eq(project_name)
 end

@@ -26,7 +26,7 @@ Tracks has a few software requirements that must be satisfied before installatio
 
 There are two methods of downloading Tracks:
 
-1. (Recommended for most people) Download the [zipped package](https://github.com/TracksApp/tracks/archive/v2.2.2.zip) for the latest stable release (2.2.2) and unzip in your preferred location (e.g. `~/Sites` for Mac OS X users).
+1. (Recommended for most people) Download an archive of [the latest stable release](https://github.com/TracksApp/tracks/releases/latest) and extract it to your preferred location (e.g. `~/Sites` for Mac OS X users).
 2. If you want to live on the edge, you can get the latest development version from GitHub using git (bear in mind that this may be less stable than the released versions):
 
 <!-- -->
@@ -41,7 +41,7 @@ There are two methods of downloading Tracks:
 
 You need to create a database and database-user to use with Tracks. For this, you can use MySQL Administrator or go into a terminal and issue the following commands:
 
-    mysql -uroot -p
+    mysql -u root -p
     mysql> CREATE DATABASE tracks;
     mysql> GRANT ALL PRIVILEGES ON tracks.* TO yourmysqluser@localhost \
     IDENTIFIED BY 'password-goes-here' WITH GRANT OPTION;
@@ -72,7 +72,7 @@ Tracks is built upon a number of Ruby libraries (known as ‘gems’). The Bundl
 2. Open the file `config/database.yml` and edit the `production:` section with the details of your database. If you are using MySQL the `adapter:` line should read `adapter: mysql2`, `host: localhost` (in the majority of cases), and your username and password should match those you assigned when you created the database. If you are using SQLite3, you should have only two lines under the production section: `adapter: sqlite3` and `database: db/tracks.db`.
 3. Open the file `config/site.yml`, and read through the settings to make sure that they suit your setup. In most cases, all you need to change are the `secret_token`, the administrator email address (`admin_email`), and the time zone setting. For the time zone setting you can use the command `bundle exec rake time:zones:local` to see all available timezones on your machine
 4. If you are using Windows, you may need to check the ‘shebang’ lines (`#!/usr/bin/env ruby`) of the `/public/dispatch.*` files and all the files in the `/script` directory. They are set to `#!/usr/bin/env ruby` by default. This should work for all Unix based setups (Linux or Mac OS X), but Windows users will probably have to change it to something like `#c:/ruby/bin/ruby` to point to the Ruby binary on your system.
-5. If you intend to deploy Tracks using its included web server, you’ll need to change `config.serve_static_assets` to `true` in `config/environments/production.rb` in order for the images, stylesheets, and javascript files to be served correctly.
+5. If you intend to deploy Tracks using its included web server, you’ll need to uncomment and change the `serve_static_assets` configuration option to `true` in `config/site.yml` in order for the images, stylesheets, and javascript files to be served correctly.
 
 ## Populate your database with the Tracks schema
 

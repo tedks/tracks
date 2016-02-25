@@ -57,12 +57,11 @@ class ProjectsController < ApplicationController
   def review
     @source_view = params['_source_view'] || 'review'
     @page_title = t('projects.list_reviews')
-    @projects = current_user.projects.load
-    @contexts = current_user.contexts.load
-    @projects_to_review = current_user.projects.select  {|p| p.needs_review?(current_user)}
-    @stalled_projects = current_user.projects.select  {|p| p.stalled?}
-    @blocked_projects = current_user.projects.select  {|p| p.blocked?}
-    @current_projects = current_user.projects.uncompleted.select  {|p| not(p.needs_review?(current_user))}
+    projects = current_user.projects
+    @projects_to_review = projects.select  {|p| p.needs_review?(current_user)}
+    @stalled_projects = projects.select  {|p| p.stalled?}
+    @blocked_projects = projects.select  {|p| p.blocked?}
+    @current_projects = projects.uncompleted.select { |p| not (p.needs_review?(current_user)) }.sort_by { |p| p.last_reviewed || Time.zone.at(0) }
 
     init_not_done_counts(['project'])
     init_project_hidden_todo_counts(['project'])
@@ -79,15 +78,18 @@ class ProjectsController < ApplicationController
     @source_view = params['_source_view'] || 'project_list'
     @page_title = t('projects.list_completed_projects')
 
+    items_per_page = 20
     page = params[:page] || 1
-    projects_per_page = 20
-    @projects = current_user.projects.completed.paginate :page => page, :per_page => projects_per_page
+    @projects = current_user.projects.completed.paginate :page => page, :per_page => items_per_page
     @count = @projects.count
     @total = current_user.projects.completed.count
     @no_projects = @projects.empty?
 
-    @range_low = (page.to_i-1) * projects_per_page + 1
+    @range_low = (page.to_i-1) * items_per_page + 1
     @range_high = @range_low + @projects.size - 1
+
+    @range_low = 0 if @total == 0
+    @range_high = @total if @range_high > @total
 
     init_not_done_counts(['project'])
   end
@@ -231,6 +233,7 @@ class ProjectsController < ApplicationController
       elsif boolean_param('update_default_tags')
         template = 'projects/update_default_tags'
       elsif boolean_param('update_project_name')
+        # clicking on a project name in the project view gives a form triggering this
         @projects = current_user.projects
         template = 'projects/update_project_name'
       else
@@ -263,7 +266,7 @@ class ProjectsController < ApplicationController
   end
 
   def destroy
-    @project.recurring_todos.each {|rt| rt.remove_from_project!}
+    @project.recurring_todos.each(&:remove_from_project!)
     @project.destroy
 
     respond_to do |format|
@@ -337,6 +340,8 @@ class ProjectsController < ApplicationController
     if default_context_name.present?
       default_context = current_user.contexts.where(:name => default_context_name).first_or_create
       p['default_context_id'] = default_context.id
+    else
+      p['default_context_id'] = nil
     end
   end
 

@@ -113,7 +113,7 @@ module TodosHelper
     settings.reverse_merge!({
         :title => t("todos.actions.#{settings[:parent_container_type]}_#{settings[:container_name]}", :param => settings[:title_param])
       })
-    header = settings[:link_in_header].nil? ? "" : content_tag(:div, :class=>"add_note_link"){settings[:link_in_header]}
+    header = settings[:link_in_header].nil? ? "" : content_tag(:div, :class=>"link_in_container_header"){settings[:link_in_header]}
     header += content_tag(:h2) do
       toggle = settings[:collapsible] ? container_toggle("toggle_#{settings[:id]}") : ""
       "#{toggle} #{settings[:title]} #{settings[:append_descriptor]}".html_safe
@@ -179,7 +179,7 @@ module TodosHelper
     options = {:x_defer_alert => false, :class => "icon_defer_item icon_defer_#{days}_item", :id => "defer_#{days}_#{dom_id(todo)}" }
     if todo.due
       futuredate = (todo.show_from || todo.user.date) + days.days
-      if futuredate > todo.due
+      if futuredate.at_midnight > todo.due.at_midnight
         options[:x_defer_alert] = true
         options[:x_defer_date_after_due_date] = t('todos.defer_date_after_due_date')
       end
@@ -204,6 +204,14 @@ module TodosHelper
     link_to(t('todos.convert_to_project'), url, {:class => "icon_item_to_project", :id => dom_id(todo, "to_project")})
   end
 
+  def attachment_image(todo)
+    link_to(
+      image_tag('blank.png', width: 16, height: 16, border:0),
+      todo.attachments.first.file.url,
+      {:class => 'todo_attachment', title: 'Get attachments of this todo'}
+    )
+  end
+
   def collapsed_notes_image(todo)
     link = link_to(
       image_tag( 'blank.png', :width=>'16', :height=>'16', :border=>'0' ),
@@ -212,7 +220,7 @@ module TodosHelper
     notes = content_tag(:div, {
       :class => "todo_notes",
       :id => dom_id(todo, 'notes'),
-      :style => "display:none"}) { raw todo.rendered_notes }
+      :style => "display:none"}) { raw render_text(todo.notes) }
     return link+notes
   end
 
@@ -297,17 +305,16 @@ module TodosHelper
   end
 
   def project_and_context_links(todo, parent_container_type, opts = {})
-    str = ''
+    links = ''
     if todo.completed?
-      links = []
-      links << todo.context.name unless opts[:suppress_context]
-      links << todo.project.name unless opts[:suppress_project] || todo.project.nil?
-      str = "(#{links.join(", ")})" unless links.empty?
+      links << item_link_to_context( todo ) unless opts[:suppress_context]
+      links << item_link_to_project( todo ) unless opts[:suppress_project] || todo.project.nil?
     else
-      str << item_link_to_context( todo ) if include_context_link(todo, parent_container_type)
-      str << item_link_to_project( todo ) if include_project_link(todo, parent_container_type)
+      links << item_link_to_context( todo ) if include_context_link(todo, parent_container_type)
+      links << item_link_to_project( todo ) if include_project_link(todo, parent_container_type)
     end
-    return str.html_safe
+
+    links.html_safe
   end
 
   def include_context_link(todo, parent_container_type)
@@ -355,6 +362,18 @@ module TodosHelper
 
   def date_field_tag(name, id, value = nil, options = {})
     text_field_tag name, value, {"size" => 12, "id" => id, "class" => "Date", "autocomplete" => "off"}.update(options.stringify_keys)
+  end
+
+  def sort_key(todo)
+    # actions are sorted using {order("todos.due IS NULL, todos.due ASC, todos.created_at ASC")}
+    # the JavaScript frontend sorts using unicode/ascii
+    format = "%Y%m%d%H%M%S%L"
+    if todo.due?
+      sort_by_due = todo.due.strftime format
+    else
+      sort_by_due = "Z" * 17 # length of format string
+    end
+    sort_by_due + todo.created_at.strftime(format)
   end
 
   # === helpers for default layout
@@ -409,20 +428,8 @@ module TodosHelper
     return html
   end
 
-  def reset_tab_index
-    $tracks_tab_index = 0
-  end
-
-  def next_tab_index
-    # make sure it exists if reset was not called. Set to 20 to avoid clashes with existing form in sidebar
-    $tracks_tab_index ||= 20
-
-    $tracks_tab_index = $tracks_tab_index + 1
-    return $tracks_tab_index
-  end
-
   def feed_content_for_todo(todo)
-    item_notes = todo.notes ? todo.rendered_notes : ''
+    item_notes = todo.notes ? render_text(todo.notes) : ''
     due = todo.due ? content_tag(:div, t('todos.feeds.due', :date => format_date(todo.due))) : ''
     done = todo.completed? ? content_tag(:div, t('todos.feeds.completed', :date => format_date(todo.completed_at))) : ''
     context_link = link_to(context_url(todo.context), todo.context.name)
@@ -513,7 +520,7 @@ module TodosHelper
   def update_needs_to_remove_todo_from_container
     source_view do |page|
       page.context  { return @context_changed || @todo_deferred_state_changed || @todo_pending_state_changed || @todo_should_be_hidden }
-      page.project  { return @todo_deferred_state_changed || @todo_pending_state_changed || @project_changed}
+      page.project  { return @context_changed || @todo_deferred_state_changed || @todo_pending_state_changed || @project_changed}
       page.deferred { return todo_moved_out_of_container || !(@todo.deferred? || @todo.pending?) }
       page.calendar { return @due_date_changed || !@todo.due }
       page.stats    { return @todo.completed? }
@@ -547,7 +554,7 @@ module TodosHelper
   def append_updated_todo
     source_view do |page|
       page.context  { return @todo_deferred_state_changed || @todo_pending_state_changed }
-      page.project  { return @todo_deferred_state_changed || @todo_pending_state_changed }
+      page.project  { return @context_changed || @todo_deferred_state_changed || @todo_pending_state_changed }
       page.deferred { return todo_moved_out_of_container && (@todo.deferred? || @todo.pending?) }
       page.calendar { return @due_date_changed && @todo.due }
       page.stats    { return false }

@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'rails', '~>4.1.10'
+gem 'rails', '~>4.1.11'
 gem 'sass-rails', '~>4.0'
 gem 'coffee-rails', '~>4.0'
 
@@ -15,16 +15,17 @@ gem 'therubyracer', group: :therubyracer
 gem 'uglifier', '>=1.3.0'
 
 gem 'jquery-rails'
+gem 'jquery-ui-rails'
 
 # you may comment out the database driver(s) you will not be using.
 # This will prevent a native build of the driver. Building native drivers is not
 # always possible on all platforms
 # Alternatively use --without <group> arguments to bundler to not install that group
 gem "sqlite3", group: :sqlite
-gem "mysql2", group: :mysql
+gem "mysql2", "~> 0.3.17", group: :mysql
 
 gem "RedCloth"
-gem "sanitize"
+gem "sanitize", ">=3.0.0"
 gem "will_paginate"
 gem "acts_as_list"
 gem "aasm"
@@ -32,6 +33,7 @@ gem "htmlentities"
 gem "swf_fu"
 gem "rails_autolink"
 gem 'thin'
+gem 'paperclip'
 
 # To use ActiveModel has_secure_password
 gem 'bcrypt', '~> 3.1.7'
@@ -41,6 +43,8 @@ gem 'bcrypt', '~> 3.1.7'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 1.2'
+
+gem "bootstrap-sass", "3.3.3"
 
 group :development do
   gem "spring"
@@ -55,6 +59,10 @@ group :development do
   gem "activerecord-deprecated_finders"
 end
 
+group :development, :test do
+  gem 'pry'
+end
+
 group :test do
   gem "factory_girl_rails"
   gem "capybara"
@@ -65,7 +73,7 @@ group :test do
 
   gem "aruba", ">=0.5.4", :require => false
 
-  gem "selenium-webdriver", '>=2.45'
+  gem "selenium-webdriver", '>= 2.50'
 
   # uncomment to use the webkit option. This depends on Qt being installed
   # gem "capybara-webkit"

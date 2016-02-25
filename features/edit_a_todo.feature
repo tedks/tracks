@@ -244,6 +244,13 @@ Feature: Edit a next action from every page
     Then I should see the todo "todo 1"
 
   @javascript
+  Scenario: I can edit a todo without a project and the project remains blank
+    Given I have a todo "todo 1"
+    When I go to the home page
+    And I change the todo[description] field of "todo 1" to "todo 1 edit"
+    Then I should see the todo "todo 1 edit" with project name ""
+
+  @javascript
   Scenario: I can edit a todo to move it to the tickler
     When I go to the home page
     And I submit a new action with description "start later" in the context "@pc"
@@ -256,6 +263,7 @@ Feature: Edit a next action from every page
   Scenario: I can defer a todo
     When I go to the home page
     And I submit a new action with description "start later" in the context "@pc"
+    When I go to the home page
     And I defer "start later" for 1 day
     Then I should not see "start later"
     When I go to the tickler page
@@ -265,6 +273,7 @@ Feature: Edit a next action from every page
   Scenario: I can make a project from a todo
     When I go to the home page
     And I submit a new action with description "buy mediacenter" in the context "@pc"
+    When I go to the home page
     And I make a project of "buy mediacenter"
     #sidebar does not update
     Then I should be on the "buy mediacenter" project
@@ -326,7 +335,14 @@ Feature: Edit a next action from every page
     Given I have a deferred todo "moving" in context "@pc" with tags "tag"
     When I go to the tickler page
     And I edit the context of "moving" to "@new"
-    And I should see the container for context "@new"
+    Then I should see the container for context "@new"
+
+  @javascript
+  Scenario: Editing the context of a todo in the project view to a new context will show new context
+    Given I have a todo "something" in the context "@pc" in the project "project"
+    When I go to the "project" project page
+    And I edit the context of "something" to "@new"
+    Then I should see the container for context "@new"
 
   @javascript
   Scenario: Making an error when editing a todo will show error message

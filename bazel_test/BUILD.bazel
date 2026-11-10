@@ -1,0 +1,19 @@
+sh_test(
+    name = "config_test",
+    srcs = ["config_test.sh"],
+    args = [
+        "$(rlocationpath @ruby_2_2_10//:bin/ruby)",
+        "$(rlocationpath :config_tracer.rb)",
+        "$(rlocationpath //lib/tracks:config)",
+    ],
+    data = [
+        ":config_tracer.rb",
+        "//lib/tracks:config",
+        "@ruby_2_2_10//:bin/ruby",
+        "@ruby_2_2_10//:runtime",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)

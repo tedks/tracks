@@ -1,0 +1,5 @@
+filegroup(
+    name = "config",
+    srcs = ["config.rb"],
+    visibility = ["//bazel_test:__pkg__"],
+)

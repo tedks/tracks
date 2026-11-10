@@ -1,5 +1,17 @@
 # Tracks: a GTD(TM) web application, built with Ruby on Rails
 
+## Bazel Ruby configuration tracer
+
+`bazel test //bazel_test:config_test` runs the original `lib/tracks/config.rb`
+against assertions for authentication scheme selection. The Bazel module pins
+the Ruby 2.2.10 Ubuntu 22.04 x86-64 archive by SHA-256 and supplies its bundled
+library paths explicitly. The archived interpreter also requires a Linux
+x86-64 host with glibc 2.35 or newer, `libgmp.so.10`, `libcrypt.so.1`, and the
+standard `/lib64/ld-linux-x86-64.so.2` loader. The tracer disables RubyGems
+to avoid loading host gems. This bounded target does not include Rails, Bundler,
+database drivers, browser tests, or native gems. The existing Rails/Rake entry
+points remain available.
+
 * Project homepage: http://www.getontracks.org/
 * Manual: http://www.getontracks.org/manual/
 * Source at GitHub: https://github.com/TracksApp/tracks

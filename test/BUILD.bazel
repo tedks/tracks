@@ -1,0 +1,9 @@
+sh_test(
+    name = "config_test",
+    srcs = ["config_test.sh"],
+    data = [
+        ":config_test.rb",
+        "//lib/tracks:config",
+        "@ruby_2_2_10//:runtime",
+    ],
+)

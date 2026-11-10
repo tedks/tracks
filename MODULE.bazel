@@ -3,6 +3,8 @@ module(
     version = "2.0.0",
 )
 
+bazel_dep(name = "platforms", version = "1.0.0")
+
 # This archived Ruby release includes MRI 2.2.10 and its OpenSSL 1.0.2 libs.
 # Its absolute CA certificate symlinks are excluded from the Bazel runfiles.
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

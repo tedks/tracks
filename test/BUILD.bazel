@@ -6,4 +6,8 @@ sh_test(
         "//lib/tracks:config",
         "@ruby_2_2_10//:runtime",
     ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
 )

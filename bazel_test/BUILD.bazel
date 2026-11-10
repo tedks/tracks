@@ -3,10 +3,11 @@ sh_test(
     srcs = ["config_test.sh"],
     args = [
         "$(rlocationpath @ruby_2_2_10//:bin/ruby)",
-        "$(rlocationpath :config_test.rb)",
+        "$(rlocationpath :config_tracer.rb)",
+        "$(rlocationpath //lib/tracks:config)",
     ],
     data = [
-        ":config_test.rb",
+        ":config_tracer.rb",
         "//lib/tracks:config",
         "@ruby_2_2_10//:bin/ruby",
         "@ruby_2_2_10//:runtime",

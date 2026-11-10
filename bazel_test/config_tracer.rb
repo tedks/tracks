@@ -1,5 +1,5 @@
 SITE_CONFIG = {}
-require_relative '../lib/tracks/config'
+require ARGV.fetch(0)
 
 def expect(actual, expected, message)
   raise "#{message}: expected #{expected.inspect}, got #{actual.inspect}" unless actual == expected
